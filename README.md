@@ -1,0 +1,338 @@
+﻿<div align="center">
+
+## \_ TUTORIAL: BitBlt & GDI32 for the Thick\-Headed: BitBlt explained, \+ Load Sprites, Double Buffering\!
+
+
+</div>
+
+### Description
+
+"BitBlt [and GDI32] for the Thick Headed" is an in-depth, plain-english, streight-forward tutorial that teaches everything there is to know about BitBlt, and some related API. It covers everything from loading bitmap files into memory (no more picture boxes) to double-buffering (say goodbye to the SLOW 'AutoRedraw'!) to Explaining the BitBlt API in PLAIN ENGLISH. PLUS the tutorial only takes about 15 to 20 minutes to complete! (A completed version of the example project is also included)
+ 
+### More Info
+ 
+
+
+<span>             |<span>
+---                |---
+**Submitted On**   |2002-06-20 02:18:26
+**By**             |[\(Tim Miron\) yar\-interactive software](https://github.com/Planet-Source-Code/PSCIndex/blob/master/ByAuthor/tim-miron-yar-interactive-software.md)
+**Level**          |Intermediate
+**User Rating**    |4.9 (342 globes from 70 users)
+**Compatibility**  |VB 4\.0 \(32\-bit\), VB 5\.0, VB 6\.0, VB Script
+**Category**       |[Graphics](https://github.com/Planet-Source-Code/PSCIndex/blob/master/ByCategory/graphics__1-46.md)
+**World**          |[Visual Basic](https://github.com/Planet-Source-Code/PSCIndex/blob/master/ByWorld/visual-basic.md)
+**Archive File**   |[\_\_TUTORIAL971176202002\.zip](https://github.com/Planet-Source-Code/tim-miron-yar-interactive-software-tutorial-bitblt-gdi32-for-the-thick-headed-bitblt-expla__1-36053/archive/master.zip)
+
+
+
+
+
+### Source Code
+
+<br><br><br>
+<font face="Arial Black, Arial" size="5">
+BitBlt for the Thick-Headed...</font>
+<font face="Arial" size=3>
+<ul><u><b> In this tutorial you will learn...</b></u><br><br>
+<li><b>Howto load a bitmap file into memory</b>
+<li><b>Howto create a back-buffer</b>
+<li><b>The BitBlt API explained in plain english</b>
+<li><b>Howto use <i>double-buffering</i> techniques to achieve fast, flickerless graphics (faster then AutoRedraw)</b>
+<br><br>
+<b><i>This tutorial <u>should NOT take more then 15 minutes to read</u> - If you read every line and follow every instruction, almost everything you need to know [about BitBlt] is here!</i></b>
+</ul>
+<p>
+<font face="Arial" size="3"><hr>
+<b>W</b>elcome to my tutorial which I have titled <i>BitBlt for the Thick Headed</i>. If you want to go through this tutorial quickly, <b>all the essential parts are in BOLD</b>. For the record, I mean no offence to anyone on the PSC community, I was going to call it <i>BitBlt for Dummies</i> like the popular <i>For Dummies</i> books, but didn't want to get into copyright complications with book publishers. The goal of this tutorial is to step-by-step explain howto use BitBlt and some other Win32 GDI functions, to accomplish tasks such as <i>double buffering</i> and <i>loading sprites from files</i> - All in a relatively short reading-time (basically i'll try not to ramble on too much)
+Anyways, let's get started...
+</font>
+</p>
+<p>
+<font face="Arial" size="3">
+The first thing your going to do obviously is <b>create a form</b> (so you can follow along with this tutorial), <b>set the ScaleMode to '3 - Pixel'</b>, I suggest you always set the scalemode to Pixels if your going to be using the form with API.
+<br><br>
+Next <b>Increase the form's size until the ScaleWidth is 320, and the ScaleHeight is 256</b>.
+We will be using the form as our practice surface, note that the form property called <b>"HasDC" must be set to TRUE.</b> Also, for many of you who fell in love with using AutoRedraw, we will NOT need AutoRedraw because we are going to be using <i>Double Buffering</i> which is ALOT faster, and more professional.
+<br><br>
+The next step is to <b>declare the API calls that we will need, as shown below</b>. So <b>copy and paste the code below into your form</b>. If you dont know what API is, then you should do some research about it, before you even try to figure this tutorial out! ;-)
+</font>
+</p>
+<table cellpadding=16><tr><td bgcolor="#eeeeee">
+<font size=2 face="Courier New, Courier">
+<font size=2 color=green>'The following API calls are for:</font><br>
+<br>
+<font size=2 color=green>'blitting</font><br>
+<font size=2 color=blue>Private Declare Function</font><b> BitBlt </b><font size=2 color=blue>Lib</font> "gdi32" (<font size=2 color=blue>ByVal</font> hDestDC <font size=2 color=blue>As Long</font>, <font size=2 color=blue>ByVal</font> x <font size=2 color=blue>As Long</font>, <font size=2 color=blue>ByVal</font> y <font size=2 color=blue>As Long</font>, <font size=2 color=blue>ByVal</font> nWidth <font size=2 color=blue>As Long</font>, <font size=2 color=blue>ByVal</font> nHeight <font size=2 color=blue>As Long</font>, <font size=2 color=blue>ByVal</font> hSrcDC <font size=2 color=blue>As Long</font>, <font size=2 color=blue>ByVal</font> xSrc <font size=2 color=blue>As Long</font>, <font size=2 color=blue>ByVal</font> ySrc <font size=2 color=blue>As Long</font>, <font size=2 color=blue>ByVal</font> dwRop <font size=2 color=blue>As Long</font>) <font size=2 color=blue>As Long<br>
+<br>
+<font size=2 color=green>'code timer</font><br>
+Private Declare Function</font><b> GetTickCount </b><font color=blue>Lib</font> "kernel32" () <font color=blue>As Long</font><br>
+<br>
+<font size=2 color=green>'creating buffers / loading sprites</font><br>
+<font size=2 color=blue>Private Declare Function</font><b> CreateCompatibleBitmap </b><font size=2 color=blue>Lib</font> "gdi32" (<font size=2 color=blue>ByVal</font> hdc <font size=2 color=blue>As Long</font>, <font size=2 color=blue>ByVal</font> nWidth <font size=2 color=blue>As Long</font>, <font size=2 color=blue>ByVal</font> nHeight <font size=2 color=blue>As Long</font>) <font size=2 color=blue>As Long<br>
+Private Declare Function</font><b> CreateCompatibleDC </b><font size=2 color=blue>Lib</font> "gdi32" (<font size=2 color=blue>ByVal</font> hdc <font size=2 color=blue>As Long</font>) <font size=2 color=blue>As Long<br>
+Private Declare Function</font><b> GetDC </b><font color=blue>Lib</font> "user32" (<font color=blue>ByVal</font> hwnd <font color=blue>As Long</font>) <font color=blue>As Long</font><br>
+<br>
+<font size=2 color=green>'loading sprites</font><br>
+<font size=2 color=blue>Private Declare Function</font><b> SelectObject </b><font size=2 color=blue>Lib</font> "gdi32" (<font size=2 color=blue>ByVal</font> hdc <font size=2 color=blue>As Long</font>, <font size=2 color=blue>ByVal</font> hObject <font size=2 color=blue>As Long</font>) <font size=2 color=blue>As Long</font><br>
+<br>
+<font size=2 color=green>'cleanup</font><br>
+<font size=2 color=blue>Private Declare Function</font><b> DeleteObject </b><font size=2 color=blue>Lib</font> "gdi32" (<font size=2 color=blue>ByVal</font> hObject <font size=2 color=blue>As Long</font>) <font size=2 color=blue>As Long<br>
+Private Declare Function</font><b> DeleteDC </b><font size=2 color=blue>Lib</font> "gdi32" (<font size=2 color=blue>ByVal</font> hdc <font size=2 color=blue>As Long</font>) <font size=2 color=blue>As Long</font><br>
+<br>
+<font size=2 color=green>'end of copy-paste here...</font><br>
+</font>
+</td></tr></table>
+<br><br>
+<font face="Arial" size="1" color=red>
+<b>Q. What is a DC (also known as: Device Context, hDC)?</b><br>
+<i>A. A Device Context is a number that points to an "address" in memory where data is stored, when using BitBlt, we point to the Address where graphical data is stored in memory.</i>
+<br><br></font><font face="Arial" size="3">
+Next, we need to store the addresses of the DC's that we are creating. DC's addresses are Long values so we will <b>Declare Public Variables to store the DC's memory address</b> as shown below. <i>(copy and paste</i>
+<br>
+</font>
+<table cellpadding=16><tr><td bgcolor="#eeeeee">
+<font size=2 face="Courier New, Courier">
+<font color=green>'our Buffer's DC</font><br>
+<font color=blue>Public</font> myBackBuffer <font color=blue>As Long<br>
+Public</font> myBufferBMP <font color=blue>As Long</font><br>
+<br>
+<font color=green>'The DC of our sprite/graphic</font><br>
+<font color=blue>Public</font> mySprite <font color=blue>As Long</font><br>
+<br>
+<font color=green>'coordinates of our sprite/graphic on the screen</font><br>
+<font color=blue>Public</font> SpriteX <font color=blue>As Long<br>
+Public</font> SpriteY <font color=blue>As Long</font><br>
+<br>
+<font size=2 color=green>'end of copy-paste here...</font><br>
+</td></tr></table>
+<br><br>
+<font face="Arial" size="1" color=red>
+<b>Q. Do we have to make all these variable's public?</b><br>
+<i>A. NO, BUT its a good idea to at least make the DC's variables public so that its easier to cleanup the memory after the program is finished.</i>
+<br><br></font><font face="Arial" size="3">
+Now we have the foundation of our code, we have all the API declarations we'll be needing, and all the variables we'll be using in this example. The next thing we're gunna do is <b>create a function that loads graphics into memory</b>, it makes working with the API a bit simpler...
+<ul>
+<b>Device Contexts - TIP:</b> One thing that is important to understand is that a device context alone has no graphical data in it. A device context needs to have a bitmap loaded into it, whether that be a bitmap file, or a blank bitmap to use as a canvas to draw on (which is how you create a back buffer).
+</ul>
+Ok, so this is what our function does... It creates a Device Context compatible with the screen, it then loads the specified graphics file into the device context... <b>Copy and paste the function below</b>, but be sure to <b>read all the comments</b> so you understance the concept.
+<table cellpadding=16><tr><td bgcolor="#eeeeee">
+<font size=2 face="Courier New, Courier">
+<font color=blue>
+Public Function</font> LoadGraphicDC(sFileName <font color=blue>As String</font>) <font color=blue>As Long</font><br>
+<font color=green>'cheap error handling</font><br>
+<font color=blue>On Error Resume Next</font><br>
+<br>
+<font color=green>'temp variable to hold our DC address</font><br>
+<font color=blue>Dim</font> LoadGraphicDCTEMP <font color=blue>As Long</font><br>
+<br>
+<font color=green>'create the DC address compatible with</font><br>
+<font color=green>'the DC of the screen</font><br>
+LoadGraphicDCTEMP = CreateCompatibleDC(GetDC(0))<br>
+<br>
+<font color=green>'load the graphic file into the DC...</font><br>
+ SelectObject LoadGraphicDCTEMP, LoadPicture(sFileName)<br>
+<br>
+<font color=green>'return the address of the file</font><br>
+LoadGraphicDC = LoadGraphicDCTEMP<br>
+<font color=blue>End Function</font><br>
+<br>
+<font size=2 color=green>'end of copy-paste here...</font><br>
+</font>
+</td></tr></table><br><br>
+<font face="Arial" size="1" color=red>
+<b>Q. What is double-buffering?</b><br>
+<i>A. Double Buffering is when you create a graphical surface to paint on (like a canvas) that you blit all of your sprites/graphics/text onto in the memory (offscreen) then blit the final result onto the screen. It prevents flickering (which occurs if multiple sprites are blitted directly onto the screen.) and is much faster then AutoRedraw.</i>
+<br><br></font>
+<font face="Arial" size=3>
+We're gunna be using the function in our example code... but before we go any further with the example project, I'm going to explain the BitBlt API from start to finish.<br>
+<br><hr><br>
+<font face="Arial Black, Arial" size=5>The BitBlt API...</font><br><br>
+<font face="Arial" size=3>
+BitBlt is a function in the DLL "gdi32".<br>
+<ul>
+<b>Technical Deffinition: </b>it performs a bit-block transfer of the color data corresponding to a rectangle of pixels from the specified source device context into a destination device context.
+<b>In Plain English...</b> This basically means that it copys graphical data from one graphics surface [a bitmap] to another graphics surface [the screen, or a form].
+</ul>
+Now lets take a look at the API declaration itself...
+The API declaration should be placed in the "General Declarations" section of a form or module. Here's what it looks like:
+<ul>
+<font face="Courier New, Courier" color=blue size=2>
+Declare Function BitBlt Lib "gdi32" Alias "BitBlt" _<br>
+(ByVal <b>hDestDC</b> As Long, _ <br>
+ByVal <b>x</b> As Long, _<br>
+ByVal <b>y</b> As Long, _<br>
+ByVal <b>nWidth</b> As Long, _<br>
+ByVal <b>nHeight</b> As Long, _<br>
+ByVal <b>hSrcDC</b> As Long, _<br>
+ByVal <b>xSrc</b> As Long, _<br>
+ByVal <b>ySrc</b> As Long, _<br>
+ByVal <b>dwRop</b> As Long) As Long
+</font>
+</ul>
+The first part of this code, the first line (in this example) says that we're
+accessing the <i>BitBlt</i> function from the <i>gdi32</i> DLL. the following lines are parameters that we have to input in order to use the function in our program. Here's a rundown of what each of these parameters is:
+<br><br>
+<li><b>hDestDC</b> - The hDC of the destination surface (this could be a form.hDC if you want to blit to a form, or it could be the address of a backbuffer that we've created).
+<li><b>x</b> - The X (horizontal position) coordinate of where we want the graphic to appear.
+<li><b>y</b> - The Y (vertical position) coordinate of where we want the graphic to appear.
+<li><b>nWidth</b> - The width of our graphic.
+<li><b>nHeight</b> - The height of our graphic.
+<li><b>hSrcDC</b> - The hDC of the source graphic, for example the DC address of a sprite that we loaded into memory.
+<li><b>xSrc</b> - The X (horizontal) offset, 0 if you want to blit from the very left edge of the source graphic, if you want to start the blit from 18 and over then you would make this value 18, etc.
+<li><b>ySrc</b> - The Y (vertical) offset, <i>same idea as xSrc, except vertically</i>
+<li><b>dwRop</b> - The drawmode we want to use when blitting our graphic, also known as <i>Raster Operations</i> or <i>ROPs</i>. This parameter is explained below.
+<br><br>
+<b>The drawmodes, or Raster Operations/ROPs available are as follows, each of these is a reserved constant in VB, so any one of these words (in italic) can be used in the <i>dwRop</i> parameter to acheive different effects:</b>
+<!-- Blt Modes -->
+<ul>
+<li><i>vbSrcCopy</i> - Copy the source image data directly onto the destination,
+replacing it completely.<br>
+<li><i>vbSrcPaint</i> - <b>OR</b>s the source and destination image data, giving a
+pseudo-alphablending effect.<br>
+<li><i>vbSrcAnd</i> - <b>AND</b>s the source and destination image data, giving a
+pseudo-gamma effect.<br>
+<li><i>vbSrcInvert</i> - <b>XOR</b>s the source and destination image data.<br>
+<li><i>vbSrcErase</i> - Inverts the destination image data then <b>AND</b>s with
+the source image data.<br>
+<li><i>vbDstInvert</i> - Inverts the destination image data, and ignores the
+source image data completely.<br>
+<li><i>vbNotSrcCopy</i> - Inverts the source image data and copies directly onto
+the destination, replacing it completely.<br>
+<li><i>vbNotSrcErase</i> - <b>OR</b>s the source and destination image data and
+inverts the result.
+</ul>
+<br></font><font face="Courier New, Courier" size=2>
+<font color=green>'An example of using BitBlt</font><br>
+<ul>
+BitBlt Form1.hDC, PlayerX, PlayerY, 48, 48, picPlayer.hDC, 0, 0, vbSrcCopy
+</ul>
+</font>
+<hr><br>
+<font face="Arial" size=3>
+<b>On with our example project...</b><br>
+Next in our example project (this is the final part), <b>we're going to use <i>BitBlt</i> in a loop</b> much like you would in a game. Here's what you need to do:
+<ul><b>
+<li> Save the project file (and form file) in its own Directory.<br><br>
+<li> Create a bitmap (BMP) file, make it 32 X 32 pixels. And save it in the same directory as the project.<br><br>
+<li> NAME THE BMP FILE "sprite1.bmp"<br><br>
+<li> Create a command button, rename it to <i>cmdTest</i>.<br><br>
+<li> Move the command button to the bottom right of the form.<br><br>
+<li> Double click on the command button to bring-up its sub in the code-window, so we can enter code to be executed when it is pushed.<br><br>
+</b></ul><br>
+<b>Copy and paste this code</b> into the command button's Click-Event subroutine.
+<br><b>READ ALL THE COMMENTS, to understand the code...</b><br><br>
+<table cellpadding=16><tr><td bgcolor="#eeeeee">
+<font size=2 face="Courier New, Courier">
+<font color=green>'=== THIS CODE GOES IN CMDTEXT_CLICK EVENT ===</font><br>
+<br>
+<font color=green>'Timer variables...</font><br>
+<font color=blue>Dim</font> T1 <font color=blue>As Long</font>, T2 <font color=blue>As Long</font><br>
+<br>
+<font color=green>'create a compatable DC for the back buffer..</font><br>
+myBackBuffer = CreateCompatibleDC(GetDC(0))<br>
+<br>
+<font color=green>'create a compatible bitmap surface for the DC</font><br>
+<font color=green>'that is the size of our form.. (320 X 256)<br>
+'NOTE - the bitmap will act as the actual graphics surface inside the DC<br>
+'because without a bitmap in the DC, the DC cannot hold graphical data..<br>
+</font><br>
+myBufferBMP = CreateCompatibleBitmap(GetDC(0), 320, 256)<br>
+<br>
+<font color=green>'final step of making the back buffer...</font><br>
+<font color=green>'load our created blank bitmap surface into our buffer</font><br>
+<font color=green>'(this will be used as our canvas to draw-on off screen)</font><br>
+SelectObject myBackBuffer, myBufferBMP<br>
+<br>
+<font color=green>'before we can blit to the buffer, we should fill it with black</font><br>
+BitBlt myBackBuffer, 0, 0, 320, 256, 0, 0, 0, vbWhiteness<br>
+<br>
+<font color=green>'load our sprite (using the function we made)</font><br>
+mySprite = LoadGraphicDC(App.Path & "\sprite1.bmp")<br>
+<font color=green>'MsgBox Dir$(App.Path & "\sprite1.bmp")</font><br>
+<font color=green>'ok now all the graphics are loaded so</font><br>
+<font color=green>'lets start our main loop..</font><br>
+<br>
+<font color=green>'Disable cmdTest, because if the graphics are</font><br>
+<font color=green>'reloaded there will be memory leaks...</font><br>
+cmdTest.Enabled = False<br>
+<br>
+<font color=green>'== START MAIN LOOP ==</font>
+<br>
+<font color=green>'get current tickcount (this is used as a code timer)</font><br>
+T2 = GetTickCount<br>
+<font color=blue>Do</font><br>
+ DoEvents <font color=green>'DoEvents makes sure that our mouse and keyboard dont freeze-up</font><br>
+ T1 = GetTickCount<br>
+ <br>
+<font color=green>'if 15MS has gone by, execute our next frame</font><br>
+ <font color=blue>If</font> (T1 - T2) >= 15 <font color=blue>Then</font><br>
+ <br>
+ <font color=green>'clear the place where the sprite used to be...</font><br>
+ <font color=green>'(we do this by filling in the old sprites place</font><br>
+ <font color=green>'with black... but in games you'll probably have</font><br>
+ <font color=green>'a background tile that you would blit here)</font><br>
+ <br>
+ BitBlt myBackBuffer, SpriteX - 1, SpriteY - 1, _<br>
+ 32, 32, 0, 0, 0, vbBlackness<br>
+ <br>
+ <font color=green>'blit sprites to the back-buffer *** <br>
+'You could blit multiple sprites to the backbuffer, <br>
+'but in our example we only blit on...
+<br>
+</font>
+ BitBlt myBackBuffer, SpriteX, SpriteY, 32, 32, _<br>
+ mySprite, 0, 0, vbSrcPaint<br>
+ <br>
+ <font color=green>'now blit the backbuffer to the form...</font><br>
+ BitBlt Me.hdc, 0, 0, 320, 256, myBackBuffer, _<br>
+ 0, 0, vbSrcCopy<br>
+ <br>
+ <font color=green>'move our sprite down on a diagonal...</font><br>
+ <font color=green>'Me.Caption = SpriteX & ", " & SpriteY</font><br>
+ SpriteX = SpriteX + 1<br>
+ SpriteY = SpriteY + 1<br>
+ <br>
+ <font color=green>'update timer</font><br>
+ T2 = GetTickCount<br>
+ <font color=blue>End If</font><br>
+ <br>
+ <font color=green>'loop it until our sprite is off the screen...</font><br>
+ <font color=blue>Loop Until</font> SpriteX = 320<br>
+<br>
+<font size=2 color=green>'end of copy-paste here...</font><br>
+</font>
+</td></tr></table><br><br>
+<font size=3 face="Arial"><b>DONT RUN THE PROGRAM YET, we need to write the cleanup code...</b><br>
+The cleanup code is just some code that we add that clears the memory that was occupied by the graphics that we loaded, and the backbuffer that we created (see above code).
+This code should usually go in the <i>Form_Unload</i> event, so that it is executed when the form unloads...<br>
+<b>Copy and Paste the code below into the form's module</b>
+<table cellpadding=16><tr><td bgcolor="#eeeeee">
+<font size=2 face="Courier New, Courier">
+<font color=blue>Private Sub</font> Form_Unload(Cancel <font color=blue>As Integer</font>)<br>
+<font color=green>'this clears up the memory we used to hold</font><br>
+<font color=green>'the graphics and the buffers we made</font><br>
+<br>
+<font color=green>'Delete the bitmap surface that was in the backbuffer</font><br>
+DeleteObject myBufferBMP<br>
+<br>
+<font color=green>'Delete the backbuffer HDC</font><br>
+DeleteDC myBackBuffer<br>
+<br>
+<font color=green>'Delete the Sprite/Graphic HDC</font><br>
+DeleteDC mySprite<br>
+<br>
+<font color=blue>End<br>
+End Sub</font><br>
+<br>
+<font size=2 color=green>'end of copy-paste here...</font><br>
+</font></td></tr></table><br><br>
+</font>
+<font face="Arial" size=3>
+<b>That's it! We're done! Run the program, click the button and you will see the sprite move from the top-left of the form to the bottom right, without any flickering...</b></font>
+<br><br> <font face="Arial" size=1>
+<center>
+Example project included.<br>
+yar interactive software - 2002</font>
+</center>
+
